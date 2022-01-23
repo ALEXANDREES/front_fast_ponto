@@ -1,5 +1,6 @@
 <template>
-    <q-form class="row justify-center text-center items-center q-mt-lg">
+  <div>
+    <q-form class="row justify-center text-center items-center q-mt-lg" @submit.prevent="onSubmit">
       <div class="textSubtitleStepper text-h6 col-12 q-mb-xl">
         Passo {{ currentStepper }} de 4
       </div>
@@ -47,7 +48,7 @@
       </div>
 
       <div
-        class="row col-xl-6 col-lg-6 col-md-6 col-sm-6 col-xs-11 justify-center q-mt-xl q-py-md"
+        class="row col-xl-6 col-lg-6 col-md-6 col-sm-6 col-xs-11 justify-center q-mt-xl q-py-md shadow-3"
         style="border: 1px solid #00afef; border-radius: 5px;"
         v-if="selectedAvatarPersonalData && displayAvatarPersonalData"
       >
@@ -77,7 +78,7 @@
       </div>
 
       <div
-        class="row col-xl-6 col-lg-6 col-md-6 col-sm-6 col-xs-11 justify-center q-mt-xl q-py-md"
+        class="row col-xl-6 col-lg-6 col-md-6 col-sm-6 col-xs-11 justify-center q-mt-xl q-py-md shadow-3"
         style="border: 1px solid #00afef; border-radius: 5px;"
         v-if="selectedAvatarAddress && displayAvatarAddress"
       >
@@ -89,7 +90,7 @@
             color="primary"
             dense
             outlined
-            option-label=""
+            option-label="nome"
             :options="listCountrys"
             v-model="user.country"
           />
@@ -104,6 +105,8 @@
             dense
             outlined
             v-model="user.cep"
+            mask="##.###-###"
+            unmasked-value
             @blur="searchCityByCep()"
           />
         </div>
@@ -129,6 +132,7 @@
             dense
             outlined
             v-model="user.number"
+            type="number"
           />
         </div>
 
@@ -141,42 +145,54 @@
             dense
             outlined
             v-model="user.city"
+            readonly
           />
         </div>
       </div>
 
       <div
-        class="row col-xl-6 col-lg-6 col-md-6 col-sm-6 col-xs-11 justify-center q-mt-xl q-py-md"
+        class="row col-xl-6 col-lg-6 col-md-6 col-sm-6 col-xs-11 justify-center q-mt-xl q-py-md shadow-3"
         style="border: 1px solid #00afef; border-radius: 5px;"
         v-if="selectedAvatarMusicalPreference && displayAvatarMusicalPreference"
       >
         <div class="row col-11 justify-center">
-          <span class="col-11 text-left textSubtitleStepper text-subtitle1"> Musica: </span>
-          <q-input
-            class="col-11"
-            input-class="text-secondary"
-            color="primary"
-            dense
-            outlined
+          <span class="col-11 text-left textSubtitleStepper text-subtitle1"> Estilos Musicais: </span>
+          <q-option-group
+            class="col-11 text-left"
+            :options="optionsMusicalPreference"
+            type="checkbox"
             v-model="user.musicalPreference"
           />
         </div>
       </div>
 
       <div
-        class="row col-xl-6 col-lg-6 col-md-6 col-sm-6 col-xs-11 justify-center q-mt-xl q-py-md"
+        class="row col-xl-6 col-lg-6 col-md-6 col-sm-6 col-xs-11 justify-center q-mt-xl q-py-md shadow-3"
         style="border: 1px solid #00afef; border-radius: 5px;"
         v-if="selectedAvatarOperationalSystem && displayAvatarOperationalSystem"
       >
         <div class="row col-11 justify-center">
           <span class="col-11 text-left textSubtitleStepper text-subtitle1"> Sistema: </span>
-          <q-input
+          <q-radio
             class="col-11"
-            input-class="text-secondary"
-            color="primary"
-            dense
-            outlined
+            name="shape"
             v-model="user.operationalSystem"
+            val="windows"
+            label="Windows"
+          />
+          <q-radio
+            class="col-11"
+            name="shape"
+            v-model="user.operationalSystem"
+            val="linux"
+            label="Linux"
+          />
+          <q-radio
+            class="col-11"
+            name="shape"
+            v-model="user.operationalSystem"
+            val="macOs"
+            label="MacOS"
           />
         </div>
       </div>
@@ -199,17 +215,25 @@
           dense
           flat
           type="submit"
-          @click="currentStepper === 4 ? onSubmit() : nextOrPreviousStepper('proximo')"
+          @click="currentStepper === 4 ? nextOrPreviousStepper('finalizar') : nextOrPreviousStepper('proximo') "
         />
       </div>
     </q-form>
+
+    <modal-assessment :userData="user" ref="modalAssessment"/>
+  </div>
 </template>
 
 <script>
 import { ref } from 'vue'
 import axios from 'axios'
+import f from '../functions/util'
+import modalAssessment from 'src/components/modalAssessment.vue'
 
 export default {
+  components: {
+    modalAssessment
+  },
   name: 'PageIndex',
   setup () {
     return {
@@ -230,15 +254,41 @@ export default {
         address: '',
         number: '',
         city: '',
-        musicalPreference: '',
-        operationalSystem: ''
+        musicalPreference: [],
+        operationalSystem: '',
+        assessment: false
       }),
-      listCountrys: ref(['Brasil']),
+      listCountrys: ref([]),
+      optionsMusicalPreference: [
+        {
+          label: "Rock",
+          value: "rock"
+        },
+        {
+          label: "Reggae",
+          value: "reggae"
+        },
+        {
+          label: "Sertanejo",
+          value: "sertanejo"
+        },
+        { label: "Funk",
+          value: "funk"
+        },
+        {
+          label: "Axé",
+          value: "axe"
+        },
+        {
+          label: "Samba",
+          value: "samba"
+        }
+      ],
       messageError: ref('')
     }
   },
   mounted() {
-
+    this.listCountrys = f().countryList()
   },
   methods: {
     currentStep() {
@@ -373,7 +423,7 @@ export default {
           this.currentStepper += 1
           this.currentStep()
         }
-      } else {
+      } else if (type === 'anterior') {
           this.currentStepper -= 1
           this.currentStep()
       }
@@ -382,26 +432,31 @@ export default {
       if (type === 'proximo') {
         if (this.user.country === '' || this.user.cep === '' || this.user.address === '' || this.user.number === '' || this.user.city === '') {
           this.messageError = 'Os campos país, cep, endereço, número e cidade devem ser preenchidos!'
+
+          if (this.user.cep.length < 8) {
+            this.messageError = 'O campo CEP deve conter oito caracteres!'
+          }
+
           return this.messageErrorContent()
         } else {
           this.currentStepper += 1
           this.currentStep()
         }
-      } else {
+      } else if (type === 'anterior') {
           this.currentStepper -= 1
           this.currentStep()
       }
     },
     checkFieldsMusicalPreference(type) {
       if (type === 'proximo') {
-        if (this.user.musicalPreference === '') {
+        if (this.user.musicalPreference && this.user.musicalPreference.length === 0) {
           this.messageError = 'O campo preferência musical deve ser preenchido!'
           return this.messageErrorContent()
         } else {
           this.currentStepper += 1
           this.currentStep()
         }
-      } else {
+      } else if (type === 'anterior') {
           this.currentStepper -= 1
           this.currentStep()
       }
@@ -415,16 +470,24 @@ export default {
           this.currentStepper += 1
           this.currentStep()
         }
-      } else {
-          this.currentStepper -= 1
-          this.currentStep()
+      } else if (type === 'anterior') {
+        this.currentStepper -= 1
+        this.currentStep()
+      } else if (type === 'finalizar') {
+        if (this.user.operationalSystem === '') {
+          this.messageError = 'O campo sistema operacional deve ser preenchido!'
+          return this.messageErrorContent()
+        } else {
+          this.user.assessment = true
+        }
       }
     },
     searchCityByCep() {
-      axios.get('https://viacep.com.br/ws/'+this.user.cep+'/json/').then((res) => {
-        console.log(res.data)
-        this.user.city = res.data.localidade
-      })
+      if (this.user.cep !== '' && this.user.cep.length === 8) {
+        axios.get('https://viacep.com.br/ws/'+this.user.cep+'/json/').then((res) => {
+          this.user.city = res.data.localidade
+        })
+      }
     },
     messageErrorContent() {
       this.$q.notify({
@@ -436,7 +499,11 @@ export default {
       })
     },
     onSubmit() {
-      console.log(this.user)
+      if (this.user.name !== '' && this.user.lastName !== '' && this.user.country !== '' && this.user.cep !== '' && this.user.address !== '' && this.user.number !== '' && this.user.city !== '' && this.user.musicalPreference.length > 0 && this.user.operationalSystem !== '') {
+        if (this.user.assessment) {
+          setTimeout(() => { this.$refs.modalAssessment.open() }, 250)
+        }
+      }
     }
   }
 }
